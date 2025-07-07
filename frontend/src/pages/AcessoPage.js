@@ -63,7 +63,7 @@ const AcessoPage = () => {
       flexDirection: 'column',
       alignItems: 'center',
       backgroundColor: '#f0f2f5',
-      padding:"40px"
+      padding:"10px"
     },
     formContainer: {
       backgroundColor: '#ffffff',

@@ -8,10 +8,15 @@ import os
 from typing import Optional
 from dotenv import load_dotenv
 from pathlib import Path
+
 from . import models
-from .database import SessionLocal
+from . import dependencies # <<< PASSO 1: Importar o novo arquivo de dependências
+
+# A importação do SessionLocal não é mais necessária aqui para a dependência do DB
+# from .database import SessionLocal 
 
 
+# --- Configurações de Ambiente ---
 current_dir = Path(__file__).resolve().parent
 env_file_path = current_dir / "app_config.env"
 
@@ -31,15 +36,20 @@ if not SECRET_KEY:
     raise ValueError("Nenhuma SECRET_KEY configurada. A aplicação não pode iniciar de forma segura.")
 
 
+# --- Configuração de Segurança ---
 oauth2_scheme = HTTPBearer()
 
-def get_db_session_for_auth():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
+# <<< PASSO 2: Remover a função redundante que criava uma sessão de DB separada >>>
+# def get_db_session_for_auth():
+#     db = SessionLocal()
+#     try:
+#         yield db
+#     finally:
+#         db.close()
+
+
+# --- Funções de Token ---
 def create_token(data: dict, expires_delta: Optional[timedelta] = None):
     to_encode = data.copy()
     if expires_delta:
@@ -62,9 +72,12 @@ def verify_token(token: str, credentials_exception: HTTPException) -> str:
     except jwt.InvalidTokenError:
         raise credentials_exception
 
+
+# --- Dependência Principal de Autenticação ---
 def get_current_active_user(
     credentials: HTTPAuthorizationCredentials = Security(oauth2_scheme),
-    db: Session = Depends(get_db_session_for_auth)
+    # <<< PASSO 3: Usar a dependência centralizada para a sessão do DB >>>
+    db: Session = Depends(dependencies.get_db)
 ) -> models.Author:
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -77,6 +90,8 @@ def get_current_active_user(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuário associado ao token não encontrado")
     return user
 
+
+# --- Funções de Senha ---
 def hash_password(password: str) -> str:
     salt = bcrypt.gensalt()
     hashed = bcrypt.hashpw(password.encode('utf-8'), salt)

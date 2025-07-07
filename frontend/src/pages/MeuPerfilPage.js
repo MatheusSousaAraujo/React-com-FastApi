@@ -3,27 +3,25 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/api';
-import { Link } from 'react-router-dom'; // Importe o Link para os posts
+import { Link } from 'react-router-dom';
 
 const MeuPerfilPage = () => {
-  const { user } = useAuth();
+  const { user } = useAuth(); // O 'user' do contexto já contém a lista de grupos
   const [myPosts, setMyPosts] = useState([]);
-  const [allComments, setAllComments] = useState([]); // Novo estado para todos os comentários
+  const [allComments, setAllComments] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // A lógica de buscar os posts e comentários está perfeita e não precisa mudar.
     if (user) {
       api.get(`/authors/${user.id}/posts/`)
         .then(response => {
           const posts = response.data;
           setMyPosts(posts);
 
-          // Coleta todos os comentários de todos os posts em uma única lista
           const comments = posts.flatMap(post => 
-            // Adiciona o título do post a cada comentário para dar contexto
             post.comments.map(comment => ({ ...comment, postTitle: post.title }))
           );
-          // Ordena os comentários pelos mais recentes
           comments.sort((a, b) => new Date(b.date) - new Date(a.date));
           setAllComments(comments);
         })
@@ -38,15 +36,15 @@ const MeuPerfilPage = () => {
 
   // --- Estilos para o Layout ---
   const profileContainerStyle = {
-    maxWidth: '1200px', // Largura maior para acomodar duas colunas
+    maxWidth: '1200px',
     margin: '0 auto',
-    padding:"50px"
+    padding: "50px"
   };
 
   const gridContainerStyle = {
     display: 'grid',
-    gridTemplateColumns: '2fr 1fr', // Coluna da esquerda (posts) é 2x maior que a da direita
-    gap: '30px', // Espaço entre as colunas
+    gridTemplateColumns: '2fr 1fr',
+    gap: '30px',
     marginTop: '20px',
   };
 
@@ -57,17 +55,53 @@ const MeuPerfilPage = () => {
     boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
   };
 
+  // --- Estilo para a lista de grupos ---
+  const groupListStyle = {
+      display: 'flex',
+      flexWrap: 'wrap',
+      gap: '10px',
+      padding: 0,
+      listStyleType: 'none',
+      marginTop: '10px'
+  };
+
+  const groupTagStyle = {
+      background: '#e0e7ff',
+      color: '#4338ca',
+      padding: '5px 10px',
+      borderRadius: '12px',
+      fontSize: '0.9em',
+      fontWeight: '500'
+  };
+
+
   return (
     <div style={profileContainerStyle}>
-      {/* --- Informações do Usuário --- */}
+      {/* --- Informações do Usuário (ATUALIZADO COM GRUPOS) --- */}
       <div style={columnStyle}>
         <h2 style={{ marginTop: 0 }}>Meu Perfil</h2>
         <p><strong>Usuário:</strong> {user.username}</p>
         <p><strong>Email:</strong> {user.email}</p>
-        {/* Futuramente, o botão de editar perfil entraria aqui */}
+        
+        {/* >>> NOVA SEÇÃO PARA MOSTRAR OS GRUPOS <<< */}
+        <hr style={{ border: 'none', borderTop: '1px solid #eee', margin: '20px 0' }}/>
+        <div>
+            <h3 style={{ margin: 0 }}>Meus Fóruns</h3>
+            {user.groups && user.groups.length > 0 ? (
+                <ul style={groupListStyle}>
+                    {user.groups.map(group => (
+                        <li key={group.id} style={groupTagStyle}>
+                            {group.name}
+                        </li>
+                    ))}
+                </ul>
+            ) : (
+                <p>Você ainda não participa de nenhum fórum.</p>
+            )}
+        </div>
       </div>
 
-      {/* --- Layout de Duas Colunas --- */}
+      {/* --- Layout de Duas Colunas (Inalterado) --- */}
       <div style={gridContainerStyle}>
         
         {/* --- Coluna da Esquerda: Meus Posts --- */}
@@ -76,10 +110,11 @@ const MeuPerfilPage = () => {
           {myPosts.length > 0 ? (
             myPosts.map(post => (
               <div key={post.id} style={{ borderBottom: '1px solid #eee', paddingBottom: '15px', marginBottom: '15px' }}>
-                {/* Tornamos o título um link para a página do post no mural (se houver) */}
-                <Link to={`/mural`} style={{ textDecoration: 'none' }}> 
+                <Link to={`/groups/${post.group.id}`} style={{ textDecoration: 'none' }}> 
                   <h4 style={{ margin: 0, color: '#2563eb' }}>{post.title}</h4>
                 </Link>
+                 {/* Adicionando o grupo do post */}
+                <small style={{ color: '#6b7280' }}>no fórum: {post.group.name}</small>
                 <p style={{ margin: '5px 0 0 0', color: '#4b5563' }}>{post.text}</p>
                 <small>Comentários recebidos: {post.comments.length}</small>
               </div>

@@ -6,28 +6,33 @@ import { AuthProvider } from './context/AuthContext';
 import Navbar from "./components/Navbar";
 import ProtectedRoute from './components/ProtectedRoute';
 
+// Suas páginas existentes
 import HomePage from './pages/HomePage';
 import AcessoPage from './pages/AcessoPage';
 import MuralPage from './pages/MuralPage';
 import NovaMensagemPage from './pages/NovaMensagemPage';
 import MeuPerfilPage from './pages/MeuPerfilPage';
-import EditarPostPage from './pages/EditarPostPage'; 
+import EditarPostPage from './pages/EditarPostPage';
 
-import './index.css'; 
+// >>> NOVA PÁGINA A SER IMPORTADA <<<
+import GroupDetailPage from './pages/GroupDetailPage';
+import CriarGrupoPage from './pages/CriarGrupoPage';
+
+import './index.css';
 
 function App() {
   const appContainerStyle = {
     display: 'flex',
     flexDirection: 'column',
     height: '100vh',
-    backgroundColor: '#f4f7f6', // Um fundo suave para o corpo da aplicação
+    backgroundColor: '#f4f7f6',
   };
 
   const mainContentStyle = {
     flex: 1,
     overflowY: 'auto',
-    padding: '2rem', // Espaçamento interno para o conteúdo
-    boxSizing: 'border-box', // Garante que o padding não aumente o tamanho total
+    padding: '2rem',
+    boxSizing: 'border-box',
   };
 
   return (
@@ -38,9 +43,15 @@ function App() {
 
           <main style={mainContentStyle}>
             <Routes>
-              {/* --- Rotas --- */}
+              {/* --- Rotas Públicas --- */}
               <Route path="/" element={<HomePage />} />
               <Route path="/acesso" element={<AcessoPage />} />
+
+              {/* >>> NOVA ROTA PÚBLICA PARA DETALHES DO GRUPO <<< */}
+              <Route path="/groups/:groupId" element={<GroupDetailPage />} />
+              <Route path="/criar-grupo" element={<CriarGrupoPage />} /> 
+
+              {/* --- Rotas Protegidas (Mantendo as suas) --- */}
               <Route element={<ProtectedRoute />}>
                 <Route path="/mural" element={<MuralPage />} />
                 <Route path="/nova-mensagem" element={<NovaMensagemPage />} />
