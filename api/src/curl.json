@@ -1,0 +1,8 @@
+curl --location 'http://127.0.0.1:8000/posts' \
+--header 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqb2FvIiwiZXhwIjoxNzQ5NjAyNTM4fQ.UAiPm20L8-cOFczLxwbpyHqLW3uuwkEv1SZtHDHUvWk' \
+--header 'Content-Type: application/json' \
+--data '{
+  "title": "Mensagem do João",
+  "text": "Esta é a primeira mensagem do João",
+  "date": "2025-06-10T22:29:06.138Z"
+}'
