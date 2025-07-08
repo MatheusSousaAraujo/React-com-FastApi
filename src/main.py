@@ -105,6 +105,28 @@ def leave_group(group_id: int, db: Session = Depends(dependencies.get_db), curre
     db.commit()
     return {"message": f"Você saiu do grupo '{group.name}' com sucesso"}
 
+@app.delete("/groups/{group_id}", status_code=status.HTTP_204_NO_CONTENT, tags=["Groups"])
+def delete_group(
+    group_id: int,
+    db: Session = Depends(dependencies.get_db),
+    current_user: models.Author = Depends(auth.get_current_active_user)
+):
+    """
+    (PROTEGIDA) Permite que o CRIADOR de um grupo o exclua.
+    Isso também excluirá todos os posts e comentários associados devido ao 'cascade' no modelo.
+    """
+    group = db.query(models.Group).filter(models.Group.id == group_id).first()
+    
+    if not group:
+        raise HTTPException(status_code=404, detail="Grupo não encontrado")
+    
+    if group.creator_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Você não tem permissão para excluir este grupo")
+        
+    db.delete(group)
+    db.commit()
+    return None
+
 # =================================================================
 # ===                  ENDPOINTS DE POSTS E COMENTÁRIOS           ===
 # =================================================================

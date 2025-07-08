@@ -38,7 +38,7 @@ const MeuPerfilPage = () => {
   const profileContainerStyle = {
     maxWidth: '1200px',
     margin: '0 auto',
-    padding: "50px"
+    padding: "0, 50px, 50px"
   };
 
   const gridContainerStyle = {
@@ -53,6 +53,7 @@ const MeuPerfilPage = () => {
     padding: '20px',
     borderRadius: '8px',
     boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
+    border: '1px solid rgb(209, 213, 219)',
   };
 
   // --- Estilo para a lista de grupos ---

@@ -27,9 +27,10 @@ const HomePage = () => {
   // --- Estilos para os cartões dos grupos ---
   const styles = {
     container: {
-      maxWidth: '900px',
+      maxWidth: '1200px',
       margin: '0 auto',
       textAlign: 'center',
+      padding: "0, 50px, 50px"
     },
     header: {
       marginBottom: '30px',

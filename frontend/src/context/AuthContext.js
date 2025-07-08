@@ -10,45 +10,61 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  useEffect(() => {
+  // Função centralizada para buscar os dados do usuário
+  const fetchUser = async () => {
     const token = localStorage.getItem('token');
     if (token) {
-      api.get('/users/me/')
-        .then(response => {
-          setUser(response.data);
-        })
-        .catch(() => {
-          // Limpa o token se for inválido
-          localStorage.removeItem('token');
-          setUser(null);
-        })
-        .finally(() => {
-          setLoading(false);
-        });
-    } else {
-      setLoading(false);
+      try {
+        const response = await api.get('/users/me/');
+        setUser(response.data);
+      } catch (error) {
+        console.error("Token inválido ou erro na API. Limpando sessão.", error);
+        localStorage.removeItem('token');
+        setUser(null);
+      }
     }
-  }, []);
+  };
+
+  // useEffect inicial para carregar o usuário na primeira vez
+  useEffect(() => {
+    const initialLoad = async () => {
+      setLoading(true);
+      await fetchUser();
+      setLoading(false);
+    };
+    initialLoad();
+  }, []); // Roda apenas uma vez na montagem
 
   const login = async (username, password) => {
     const response = await api.post('/login/', { username, password });
     const { access_token } = response.data;
     localStorage.setItem('token', access_token);
-    const userResponse = await api.get('/users/me/');
-    setUser(userResponse.data);
-    navigate('/mural'); // Redireciona para o mural após o login
+    // Define o cabeçalho para as próximas requisições desta sessão
+    api.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
+    await fetchUser(); // Busca os dados do usuário recém-logado
+    navigate('/mural');
   };
 
   const logout = () => {
     localStorage.removeItem('token');
+    delete api.defaults.headers.common['Authorization'];
     setUser(null);
-    navigate('/'); // Redireciona para a página inicial
+    navigate('/');
+  };
+
+  // >>> NOVA FUNÇÃO PARA ATUALIZAR O USUÁRIO SOB DEMANDA <<<
+  const refreshUser = async () => {
+    console.log("AuthContext: Atualizando dados do usuário...");
+    // Não precisa de setLoading aqui, para não piscar a tela inteira
+    await fetchUser();
+    console.log("AuthContext: Dados do usuário atualizados.");
   };
 
   const isAuthenticated = !!user;
 
+  // Adiciona 'refreshUser' ao valor que o contexto fornece
   return (
-    <AuthContext.Provider value={{ isAuthenticated, user, login, logout, loading }}>
+    <AuthContext.Provider value={{ isAuthenticated, user, login, logout, loading, refreshUser }}>
       {!loading && children}
     </AuthContext.Provider>
   );

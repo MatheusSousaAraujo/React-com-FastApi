@@ -3,18 +3,14 @@ from datetime import datetime, timedelta, timezone
 import bcrypt
 from fastapi import HTTPException, Security, Depends, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload # <<< PASSO 1: Importar selectinload
 import os
 from typing import Optional
 from dotenv import load_dotenv
 from pathlib import Path
 
 from . import models
-from . import dependencies # <<< PASSO 1: Importar o novo arquivo de dependências
-
-# A importação do SessionLocal não é mais necessária aqui para a dependência do DB
-# from .database import SessionLocal 
-
+from . import dependencies
 
 # --- Configurações de Ambiente ---
 current_dir = Path(__file__).resolve().parent
@@ -38,15 +34,6 @@ if not SECRET_KEY:
 
 # --- Configuração de Segurança ---
 oauth2_scheme = HTTPBearer()
-
-
-# <<< PASSO 2: Remover a função redundante que criava uma sessão de DB separada >>>
-# def get_db_session_for_auth():
-#     db = SessionLocal()
-#     try:
-#         yield db
-#     finally:
-#         db.close()
 
 
 # --- Funções de Token ---
@@ -76,7 +63,6 @@ def verify_token(token: str, credentials_exception: HTTPException) -> str:
 # --- Dependência Principal de Autenticação ---
 def get_current_active_user(
     credentials: HTTPAuthorizationCredentials = Security(oauth2_scheme),
-    # <<< PASSO 3: Usar a dependência centralizada para a sessão do DB >>>
     db: Session = Depends(dependencies.get_db)
 ) -> models.Author:
     credentials_exception = HTTPException(
@@ -85,7 +71,12 @@ def get_current_active_user(
         headers={"WWW-Authenticate": "Bearer"},
     )
     username = verify_token(credentials.credentials, credentials_exception)
-    user = db.query(models.Author).filter(models.Author.username == username).first()
+    
+    # <<< PASSO 2: Modificar a query para forçar o carregamento da relação 'groups' >>>
+    user = db.query(models.Author).options(
+        selectinload(models.Author.groups)
+    ).filter(models.Author.username == username).first()
+    
     if user is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuário associado ao token não encontrado")
     return user

@@ -99,7 +99,6 @@ const Navbar = () => {
           <>
             {/* Links para as páginas */}
             <NavLink to="/mural" style={getLinkStyle}>Meu Feed</NavLink> {/* Renomeado para clareza */}
-            <NavLink to="/nova-mensagem" style={getLinkStyle}>Nova Mensagem</NavLink>
             <NavLink to="/criar-grupo" style={getLinkStyle}>Criar Fórum</NavLink> {/* Adicionado */}
             <NavLink to="/meu-perfil" style={getLinkStyle}>Meu Perfil</NavLink>
             

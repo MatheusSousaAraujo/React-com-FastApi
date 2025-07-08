@@ -4,10 +4,9 @@ import React, { useState, useEffect } from 'react';
 import api from '../api/api';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import editIcon from '../edit.png';
+import editIcon from '../edit.png'; // Certifique-se que este ícone existe na pasta src
 
 const MuralPage = () => {
-    // --- SUA LÓGICA E FUNÇÕES (sem alterações) ---
     const [groupedPosts, setGroupedPosts] = useState({});
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -96,7 +95,6 @@ const MuralPage = () => {
 
     const groupIds = Object.keys(groupedPosts);
 
-    // --- Estilo base para os botões do cabeçalho do grupo ---
     const headerButtonStyle = {
         padding: '8px 16px',
         borderRadius: '6px',
@@ -104,65 +102,76 @@ const MuralPage = () => {
         fontWeight: 'bold',
         fontSize: '14px',
         border: '1px solid transparent',
-        minWidth: '110px', // <<< A SOLUÇÃO: Garante uma largura mínima para ambos
-        textAlign: 'center' // Garante que o texto fique centralizado
+        minWidth: '110px',
+        textAlign: 'center'
     };
 
     return (
-        <div style={{ maxWidth: '900px', margin: '0 auto' }}>
-            <h1 style={{ color: '#111827' }}>Meu Feed</h1>
+        <div style={{ maxWidth: '1200px', margin: '0px', padding: "50px", paddingTop: "0px", marginTop:"0px" }}>
             
+            <h1 style={{ color: '#111827', marginTop:'10px' }}>Meu Feed</h1>
+
             {groupIds.length > 0 ? (
                 groupIds.map(groupId => {
                     const group = groupedPosts[groupId];
                     return (
-                        <div key={group.id} style={{ 
-                            border: '1px solid #d1d5db', borderRadius: '10px', 
-                            marginBottom: '40px', background: '#f9fafb', overflow: 'hidden'
+                        <div key={group.id} style={{
+                            border: '1px solid #d1d5db',
+                            borderRadius: '10px',
+                            marginBottom: '40px',
+                            background: '#f9fafb',
+                            overflow: 'hidden'
                         }}>
-                            <div style={{ 
-                                display: 'flex', justifyContent: 'space-between', alignItems: 'center', 
-                                padding: '20px', borderBottom: '1px solid #e5e7eb', background: 'white' 
+                            <div style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                padding: '20px',
+                                borderBottom: '1px solid #e5e7eb',
+                                background: 'white'
                             }}>
                                 <div>
-                                    <Link to={`/groups/${group.id}`} style={{textDecoration: 'none'}}>
+                                    <Link to={`/groups/${group.id}`} style={{ textDecoration: 'none' }}>
                                         <h2 style={{ margin: 0, color: '#1e3a8a' }}>Fórum: {group.name}</h2>
                                     </Link>
                                     <p style={{ margin: '5px 0 0 0', color: '#4b5563' }}>{group.description}</p>
                                 </div>
                                 <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexShrink: 0, marginLeft: '20px' }}>
-                                    <Link 
-                                        to="/nova-mensagem" 
+                                    <Link
+                                        to="/nova-mensagem"
                                         state={{ preselectedGroup: { id: group.id, name: group.name } }}
                                         style={{ textDecoration: 'none' }}
                                     >
                                         <button style={{
-                                            ...headerButtonStyle, // Aplica o estilo base
-                                            backgroundColor: '#dbeafe', 
-                                            color: '#1e40af',           
-                                            borderColor: '#bfdbfe',
+                                            ...headerButtonStyle,
+                                            backgroundColor: '#3b82f6',
+                                            color: 'white',
+                                            border: 'none',
                                         }}>
                                             Criar Post
                                         </button>
                                     </Link>
-                                    <button 
-                                        onClick={() => handleLeaveGroup(group.id, group.name)} 
+                                    <button
+                                        onClick={() => handleLeaveGroup(group.id, group.name)}
                                         style={{
-                                            ...headerButtonStyle, // Aplica o estilo base
-                                            backgroundColor: '#fee2e2', 
-                                            color: '#b91c1c',           
-                                            borderColor: '#fecaca',
+                                            ...headerButtonStyle,
+                                            backgroundColor: '#E53E3E',
+                                            color: 'white',
+                                            border: 'none',
                                         }}>
                                         Sair
                                     </button>
                                 </div>
                             </div>
-                            
+
                             <div style={{ padding: '20px' }}>
                                 {group.posts.map(post => (
                                     <div key={post.id} style={{
-                                        border: '1px solid #e5e7eb', borderRadius: '8px', marginBottom: '20px',
-                                        background: '#ffffff', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05)'
+                                        border: '1px solid #e5e7eb',
+                                        borderRadius: '8px',
+                                        marginBottom: '20px',
+                                        background: '#ffffff',
+                                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05)'
                                     }}>
                                         <div style={{ padding: '20px' }}>
                                             <div>
@@ -179,7 +188,7 @@ const MuralPage = () => {
                                                             <img src={editIcon} alt="Editar" style={{ width: '16px', height: '16px' }} />
                                                         </button>
                                                     </Link>
-                                                    <button onClick={() => handleDeletePost(post.id)} style={{ backgroundColor: '#ef4444', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>Excluir</button>
+                                                    <button onClick={() => handleDeletePost(post.id)} style={{ backgroundColor: '#E53E3E', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>Excluir</button>
                                                 </div>
                                             )}
                                         </div>
@@ -191,7 +200,7 @@ const MuralPage = () => {
                                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px' }}>
                                                             <p style={{ margin: 0, flex: '1 1 auto', wordBreak: 'break-word', color: '#111827' }}>{comment.text}</p>
                                                             {user && user.id === comment.commenter.id && (
-                                                                <button onClick={() => handleDeleteComment(comment.id)} style={{ backgroundColor: '#EF4444', color: 'white', border: 'none', borderRadius: '50%', width: '24px', height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0, userSelect: 'none', fontWeight: 'bold' }}>X</button>
+                                                                <button onClick={() => handleDeleteComment(comment.id)} style={{ backgroundColor: '#EF4444', color: 'white', border: 'none', borderRadius: '15%', width: '24px', height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0, userSelect: 'none', fontWeight: 'bold' }}>X</button>
                                                             )}
                                                         </div>
                                                         <small style={{ color: '#6b7280' }}>por: {comment.commenter.username} em {new Date(comment.date).toLocaleString()}</small>
@@ -199,10 +208,50 @@ const MuralPage = () => {
                                                 ))}
                                             </div>
                                         )}
-                                        <div style={{ padding: '20px', borderTop: '1px solid #e5e7eb' }}>
-                                            <form onSubmit={(e) => handleCommentSubmit(e, post.id)} style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '10px', alignItems: 'center' }}>
-                                                <input type="text" placeholder="Adicione um comentário..." value={commentText[post.id] || ''} onChange={e => setCommentText(prev => ({ ...prev, [post.id]: e.target.value }))} style={{ width: '100%', padding: '10px', border: '1px solid #d1d5db', borderRadius: '6px', boxSizing: 'border-box', fontFamily: 'inherit', fontSize: '14px' }} />
-                                                <button type="submit" style={{ padding: '8px 20px', backgroundColor: '#3b82f6', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>Comentar</button>
+                                        {/* --- FORMULÁRIO DE COMENTÁRIO COM ESTILO CORRIGIDO --- */}
+                                        <div style={{ padding: '0px', borderTop: '1px solid #e5e7eb' }}>
+                                            <form
+                                                onSubmit={(e) => handleCommentSubmit(e, post.id)}
+                                                style={{
+                                                    display: 'grid',
+                                                    gridTemplateColumns: '1fr auto', // Input ocupa o espaço, botão se ajusta
+                                                    gap: '10px',
+                                                    alignItems: 'center',
+                                                    padding: '5px',
+                                                    margin: '5px',
+                                                    maxWidth: '1200px'
+                                                }}
+                                            >
+                                                <input
+                                                    type="text"
+                                                    placeholder="Adicione um comentário..."
+                                                    value={commentText[post.id] || ''}
+                                                    onChange={e => setCommentText(prev => ({ ...prev, [post.id]: e.target.value }))}
+                                                    style={{
+                                                        width: '100%',
+                                                        padding: '10px',
+                                                        border: '1px solid #d1d5db',
+                                                        borderRadius: '6px',
+                                                        boxSizing: 'border-box',
+                                                        fontFamily: 'inherit',
+                                                        fontSize: '14px'
+                                                    }}
+                                                />
+                                                <button
+                                                    type="submit"
+                                                    style={{
+                                                        padding: '10px 20px', // Padding vertical igual ao do input
+                                                        backgroundColor: '#3b82f6',
+                                                        color: 'white',
+                                                        border: 'none',
+                                                        borderRadius: '6px',
+                                                        cursor: 'pointer',
+                                                        fontWeight: 'bold',
+                                                        maxWidth: '200px'
+                                                    }}
+                                                >
+                                                    Comentar
+                                                </button>
                                             </form>
                                         </div>
                                     </div>

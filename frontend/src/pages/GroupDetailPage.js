@@ -6,15 +6,15 @@ import { useAuth } from '../context/AuthContext';
 
 const GroupDetailPage = () => {
   const { groupId } = useParams();
-  const { isAuthenticated, user } = useAuth();
+  // >>> Importa a função refreshUser do contexto <<<
+  const { isAuthenticated, user, refreshUser } = useAuth();
   const navigate = useNavigate();
 
   const [group, setGroup] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [isMember, setIsMember] = useState(false);
-
-  // --- FUNÇÕES IMPLEMENTADAS ---
+  const [isCreator, setIsCreator] = useState(false);
 
   const fetchGroupDetails = useCallback(() => {
     setLoading(true);
@@ -24,12 +24,21 @@ const GroupDetailPage = () => {
         const groupData = response.data;
         setGroup(groupData);
 
-        // Verificação defensiva para evitar erros de renderização
-        if (isAuthenticated && user && groupData.members && Array.isArray(groupData.members)) {
-          const memberCheck = groupData.members.some(member => member.id === user.id);
-          setIsMember(memberCheck);
+        if (isAuthenticated && user) {
+          if (groupData.members && Array.isArray(groupData.members)) {
+            const memberCheck = groupData.members.some(member => member.id === user.id);
+            setIsMember(memberCheck);
+          } else {
+            setIsMember(false);
+          }
+          if (groupData.creator && groupData.creator.id === user.id) {
+            setIsCreator(true);
+          } else {
+            setIsCreator(false);
+          }
         } else {
           setIsMember(false);
+          setIsCreator(false);
         }
       })
       .catch(err => {
@@ -38,7 +47,7 @@ const GroupDetailPage = () => {
         console.error("Erro em fetchGroupDetails:", err);
       })
       .finally(() => {
-        setLoading(false); // Garante que o carregamento sempre termine
+        setLoading(false);
       });
   }, [groupId, isAuthenticated, user]);
 
@@ -47,11 +56,13 @@ const GroupDetailPage = () => {
   }, [fetchGroupDetails]);
 
   const handleJoinGroup = async () => {
-    if (!group) return; // Segurança extra
+    if (!group) return;
     try {
       await api.post(`/groups/${groupId}/join`);
       alert(`Bem-vindo ao fórum ${group.name}!`);
-      fetchGroupDetails(); // Recarrega os dados para atualizar a UI
+      // >>> ATUALIZA O USUÁRIO GLOBAL <<<
+      await refreshUser();
+      fetchGroupDetails();
     } catch (err) {
       const errorMessage = err.response?.data?.detail || "Erro ao tentar entrar no fórum.";
       alert(errorMessage);
@@ -60,26 +71,44 @@ const GroupDetailPage = () => {
   };
 
   const handleLeaveGroup = async () => {
-    if (!group) return; // Segurança extra
+    if (!group) return;
     try {
       await api.post(`/groups/${groupId}/leave`);
       alert(`Você saiu do fórum ${group.name}.`);
-      fetchGroupDetails(); // Recarrega os dados para atualizar a UI
+      // >>> ATUALIZA O USUÁRIO GLOBAL <<<
+      await refreshUser();
+      fetchGroupDetails();
     } catch (err) {
       const errorMessage = err.response?.data?.detail || "Erro ao tentar sair do fórum.";
       alert(errorMessage);
       console.error("Erro em handleLeaveGroup:", err);
     }
   };
-  
-  // --- ESTILOS (Os seus, sem alterações) ---
+
+  const handleDeleteGroup = async () => {
+    if (window.confirm(`ATENÇÃO: Isso excluirá o fórum "${group.name}" e todos os seus posts permanentemente. Deseja continuar?`)) {
+        try {
+            await api.delete(`/groups/${groupId}`);
+            alert(`Fórum "${group.name}" excluído com sucesso.`);
+            // >>> ATUALIZA O USUÁRIO GLOBAL ANTES DE NAVEGAR <<<
+            await refreshUser();
+            navigate('/');
+        } catch (err) {
+            const errorMessage = err.response?.data?.detail || "Erro ao excluir o fórum.";
+            alert(errorMessage);
+        }
+    }
+  };
+
+  // --- ESTILOS ---
   const styles = {
     pageContainer: {
-      maxWidth: '900px',
+      maxWidth: '1200px',
       margin: '0 auto',
+      padding: "0, 50px, 50px"
     },
     headerCard: {
-      background: 'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)',
+      background: 'linear-gradient(135deg,rgb(35, 44, 70) 0%,rgb(92, 116, 153) 100%)',
       color: 'white',
       padding: '30px',
       borderRadius: '12px',
@@ -107,6 +136,7 @@ const GroupDetailPage = () => {
       padding: '25px',
       borderRadius: '8px',
       boxShadow: '0 4px 6px rgba(0,0,0,0.05)',
+      border: '1px solid rgb(209, 213, 219)',
     },
     columnTitle: {
       margin: '0 0 20px 0',
@@ -148,17 +178,30 @@ const GroupDetailPage = () => {
       transition: 'background-color 0.2s, transform 0.1s',
     },
     joinButton: {
-        backgroundColor: '#2563eb',
-        color: 'white',
+      backgroundColor: '#2563eb',
+      color: 'white',
     },
     leaveButton: {
-        backgroundColor: '#dc2626',
-        color: 'white',
+      backgroundColor: '#dc2626',
+      color: 'white',
     },
+    deleteButton: {
+      width: '100%',
+      padding: '12px',
+      border: 'none',
+      borderRadius: '6px',
+      fontSize: '1rem',
+      fontWeight: 'bold',
+      cursor: 'pointer',
+      transition: 'background-color 0.2s, transform 0.1s',
+      backgroundColor: '#991b1b',
+      color: 'white',
+      marginTop: '10px',
+    }
   };
 
   // --- RENDERIZAÇÃO ---
-  
+
   if (loading) return <div style={styles.pageContainer}><p>Carregando...</p></div>;
   if (error) return <div style={styles.pageContainer}><p style={{ color: 'red' }}>{error}</p></div>;
   if (!group) return <div style={styles.pageContainer}><p>Grupo não encontrado.</p></div>;
@@ -169,7 +212,7 @@ const GroupDetailPage = () => {
         <h1 style={styles.groupTitle}>{group.name}</h1>
         <p style={styles.groupDescription}>{group.description}</p>
       </header>
-      
+
       <div style={styles.mainContent}>
         <div style={styles.column}>
           <h2 style={styles.columnTitle}>Discussões</h2>
@@ -184,14 +227,12 @@ const GroupDetailPage = () => {
         </div>
 
         <div style={styles.column}>
-          {/* Adicionada verificação para 'group.members' antes de tentar ler o 'length' */}
           <h2 style={styles.columnTitle}>Membros ({group.members?.length || 0})</h2>
           <ul style={styles.memberList}>
-            {/* Adicionada verificação para 'group.members' antes de tentar o 'map' */}
             {group.members && group.members.map(member => (
               <li key={member.id} style={styles.memberItem}>
                 <div style={styles.memberAvatar}>{member.username.charAt(0).toUpperCase()}</div>
-                <span>{member.username}</span>
+                <span>{member.username}{group.creator && group.creator.id === member.id ? ' (Criador)' : ''}</span>
               </li>
             ))}
           </ul>
@@ -207,9 +248,14 @@ const GroupDetailPage = () => {
                 Entrar no Fórum
               </button>
             )}
-            {isAuthenticated && isMember && (
+            {isAuthenticated && isMember && !isCreator && (
               <button onClick={handleLeaveGroup} style={{ ...styles.actionButton, ...styles.leaveButton }}>
                 Sair do Fórum
+              </button>
+            )}
+            {isAuthenticated && isCreator && (
+              <button onClick={handleDeleteGroup} style={styles.deleteButton}>
+                Excluir Fórum (Admin)
               </button>
             )}
           </div>

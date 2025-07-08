@@ -21,7 +21,6 @@ input, textarea, button {
   margin: 5px 0;
   border-radius: 5px;
   border: 1px solid #ccc;
-  width: calc(100% - 22px); /* Considera o padding e a borda */
   box-sizing: border-box;
 }
 
@@ -48,16 +47,16 @@ form {
   border-radius: 8px;
   
   max-width: 500px;
-  margin: 20px auto;
+
 }
 
 .form-card{
   background: white;
   padding: 20px;
   border-radius: 8px;
-  
+  border: 1px solid rgb(209, 213, 219);
   max-width: 900px;
-  margin: 20px auto;
+  
 }
 
 h1 {
