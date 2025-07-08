@@ -13,23 +13,38 @@ const MuralPage = () => {
     const [commentText, setCommentText] = useState({});
     const { user } = useAuth();
 
+    // >>> A ÚNICA ALTERAÇÃO LÓGICA ESTÁ AQUI DENTRO <<<
     const fetchAndGroupPosts = async () => {
+        // Verifica se o usuário e seus grupos já foram carregados
+        if (!user || !user.groups) {
+            setLoading(false);
+            return;
+        }
+
         setLoading(true);
         setError('');
         try {
+            // Passo 1: Inicia o objeto com TODOS os grupos do usuário, garantindo que todos apareçam
+            const initialGroups = {};
+            user.groups.forEach(group => {
+                initialGroups[group.id] = {
+                    ...group, // Copia os dados do grupo (id, name, description)
+                    posts: []  // Inicia com uma lista de posts vazia
+                };
+            });
+
+            // Passo 2: Busca os posts do feed (que só virão dos grupos do usuário)
             const response = await api.get('/posts/');
             const posts = response.data;
-            const groups = {};
+
+            // Passo 3: Preenche os posts nos grupos correspondentes que já estão no objeto
             posts.forEach(post => {
-                if (post.group && post.group.id) {
-                    const groupId = post.group.id;
-                    if (!groups[groupId]) {
-                        groups[groupId] = { ...post.group, posts: [] };
-                    }
-                    groups[groupId].posts.push(post);
+                if (post.group && post.group.id && initialGroups[post.group.id]) {
+                    initialGroups[post.group.id].posts.push(post);
                 }
             });
-            setGroupedPosts(groups);
+            
+            setGroupedPosts(initialGroups);
         } catch (err) {
             console.error("Erro ao carregar o feed:", err);
             setError('Não foi possível carregar o seu feed.');
@@ -38,6 +53,7 @@ const MuralPage = () => {
         }
     };
 
+    // O resto das suas funções permanece exatamente igual
     useEffect(() => {
         if (user) {
             fetchAndGroupPosts();
@@ -93,7 +109,8 @@ const MuralPage = () => {
     if (loading) return <div>Carregando seu feed...</div>;
     if (error) return <p style={{ color: 'red' }}>{error}</p>;
 
-    const groupIds = Object.keys(groupedPosts);
+    // >>> PEQUENA ALTERAÇÃO AQUI PARA USAR A FONTE DE DADOS CORRETA <<<
+    const userGroups = user?.groups || [];
 
     const headerButtonStyle = {
         padding: '8px 16px',
@@ -111,11 +128,16 @@ const MuralPage = () => {
             
             <h1 style={{ color: '#111827', marginTop:'10px' }}>Meu Feed</h1>
 
-            {groupIds.length > 0 ? (
-                groupIds.map(groupId => {
-                    const group = groupedPosts[groupId];
+            {/* >>> ALTERAÇÃO AQUI: Itera sobre userGroups para garantir que todos apareçam <<< */}
+            {userGroups.length > 0 ? (
+                userGroups.map(group => {
+                    // Pega os dados completos do grupo (com posts) do nosso estado
+                    const groupData = groupedPosts[group.id];
+                    // Medida de segurança: se os dados ainda não foram processados, não renderiza
+                    if (!groupData) return null;
+
                     return (
-                        <div key={group.id} style={{
+                        <div key={groupData.id} style={{
                             border: '1px solid #d1d5db',
                             borderRadius: '10px',
                             marginBottom: '40px',
@@ -131,15 +153,15 @@ const MuralPage = () => {
                                 background: 'white'
                             }}>
                                 <div>
-                                    <Link to={`/groups/${group.id}`} style={{ textDecoration: 'none' }}>
-                                        <h2 style={{ margin: 0, color: '#1e3a8a' }}>Fórum: {group.name}</h2>
+                                    <Link to={`/groups/${groupData.id}`} style={{ textDecoration: 'none' }}>
+                                        <h2 style={{ margin: 0, color: '#1e3a8a' }}>Fórum: {groupData.name}</h2>
                                     </Link>
-                                    <p style={{ margin: '5px 0 0 0', color: '#4b5563' }}>{group.description}</p>
+                                    <p style={{ margin: '5px 0 0 0', color: '#4b5563' }}>{groupData.description}</p>
                                 </div>
                                 <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexShrink: 0, marginLeft: '20px' }}>
                                     <Link
                                         to="/nova-mensagem"
-                                        state={{ preselectedGroup: { id: group.id, name: group.name } }}
+                                        state={{ preselectedGroup: { id: groupData.id, name: groupData.name } }}
                                         style={{ textDecoration: 'none' }}
                                     >
                                         <button style={{
@@ -152,7 +174,7 @@ const MuralPage = () => {
                                         </button>
                                     </Link>
                                     <button
-                                        onClick={() => handleLeaveGroup(group.id, group.name)}
+                                        onClick={() => handleLeaveGroup(groupData.id, groupData.name)}
                                         style={{
                                             ...headerButtonStyle,
                                             backgroundColor: '#E53E3E',
@@ -165,97 +187,91 @@ const MuralPage = () => {
                             </div>
 
                             <div style={{ padding: '20px' }}>
-                                {group.posts.map(post => (
-                                    <div key={post.id} style={{
-                                        border: '1px solid #e5e7eb',
-                                        borderRadius: '8px',
-                                        marginBottom: '20px',
-                                        background: '#ffffff',
-                                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05)'
-                                    }}>
-                                        <div style={{ padding: '20px' }}>
-                                            <div>
-                                                <h3 style={{ margin: 0, color: '#1f2937' }}>{post.title}</h3>
-                                                <small style={{ display: 'block', marginTop: '8px', color: '#6b7280' }}>
-                                                    por: {post.author.username} em {new Date(post.date).toLocaleString()}
-                                                </small>
+                                {/* >>> LÓGICA ATUALIZADA PARA LIDAR COM GRUPOS SEM POSTS <<< */}
+                                {groupData.posts && groupData.posts.length > 0 ? (
+                                    groupData.posts.map(post => (
+                                        <div key={post.id} style={{
+                                            border: '1px solid #e5e7eb',
+                                            borderRadius: '8px',
+                                            marginBottom: '20px',
+                                            background: '#ffffff',
+                                            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05)'
+                                        }}>
+                                            <div style={{ padding: '20px' }}>
+                                                <div>
+                                                    <h3 style={{ margin: 0, color: '#1f2937' }}>{post.title}</h3>
+                                                    <small style={{ display: 'block', marginTop: '8px', color: '#6b7280' }}>
+                                                        por: {post.author.username} em {new Date(post.date).toLocaleString()}
+                                                    </small>
+                                                </div>
+                                                <p style={{ marginTop: '15px', color: '#374151', lineHeight: '1.6' }}>{post.text}</p>
+                                                {user && user.id === post.author.id && (
+                                                    <div style={{ display: 'flex', marginTop: '20px', justifyContent: 'flex-end', gap: '10px' }}>
+                                                        <Link to={`/editar-post/${post.id}`}>
+                                                            <button style={{ backgroundColor: '#f59e0b', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', padding: '8px', display: 'flex', alignItems: 'center' }}>
+                                                                <img src={editIcon} alt="Editar" style={{ width: '16px', height: '16px' }} />
+                                                            </button>
+                                                        </Link>
+                                                        <button onClick={() => handleDeletePost(post.id)} style={{ backgroundColor: '#E53E3E', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>Excluir</button>
+                                                    </div>
+                                                )}
                                             </div>
-                                            <p style={{ marginTop: '15px', color: '#374151', lineHeight: '1.6' }}>{post.text}</p>
-                                            {user && user.id === post.author.id && (
-                                                <div style={{ display: 'flex', marginTop: '20px', justifyContent: 'flex-end', gap: '10px' }}>
-                                                    <Link to={`/editar-post/${post.id}`}>
-                                                        <button style={{ backgroundColor: '#f59e0b', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', padding: '8px', display: 'flex', alignItems: 'center' }}>
-                                                            <img src={editIcon} alt="Editar" style={{ width: '16px', height: '16px' }} />
-                                                        </button>
-                                                    </Link>
-                                                    <button onClick={() => handleDeletePost(post.id)} style={{ backgroundColor: '#E53E3E', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>Excluir</button>
+                                            {post.comments.length > 0 && (
+                                                <div style={{ backgroundColor: '#f9fafb', borderTop: '1px solid #e5e7eb', padding: '20px' }}>
+                                                    <h4 style={{ marginTop: 0, marginBottom: '15px', color: '#4b5563' }}>Comentários</h4>
+                                                    {post.comments.map(comment => (
+                                                        <div key={comment.id} style={{ borderLeft: '3px solid #d1d5db', paddingLeft: '15px', marginBottom: '15px' }}>
+                                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px' }}>
+                                                                <p style={{ margin: 0, flex: '1 1 auto', wordBreak: 'break-word', color: '#111827' }}>{comment.text}</p>
+                                                                {user && user.id === comment.commenter.id && (
+                                                                    <button onClick={() => handleDeleteComment(comment.id)} style={{ backgroundColor: '#EF4444', color: 'white', border: 'none', borderRadius: '15%', width: '24px', height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0, userSelect: 'none', fontWeight: 'bold' }}>X</button>
+                                                                )}
+                                                            </div>
+                                                            <small style={{ color: '#6b7280' }}>por: {comment.commenter.username} em {new Date(comment.date).toLocaleString()}</small>
+                                                        </div>
+                                                    ))}
                                                 </div>
                                             )}
-                                        </div>
-                                        {post.comments.length > 0 && (
-                                            <div style={{ backgroundColor: '#f9fafb', borderTop: '1px solid #e5e7eb', padding: '20px' }}>
-                                                <h4 style={{ marginTop: 0, marginBottom: '15px', color: '#4b5563' }}>Comentários</h4>
-                                                {post.comments.map(comment => (
-                                                    <div key={comment.id} style={{ borderLeft: '3px solid #d1d5db', paddingLeft: '15px', marginBottom: '15px' }}>
-                                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px' }}>
-                                                            <p style={{ margin: 0, flex: '1 1 auto', wordBreak: 'break-word', color: '#111827' }}>{comment.text}</p>
-                                                            {user && user.id === comment.commenter.id && (
-                                                                <button onClick={() => handleDeleteComment(comment.id)} style={{ backgroundColor: '#EF4444', color: 'white', border: 'none', borderRadius: '15%', width: '24px', height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0, userSelect: 'none', fontWeight: 'bold' }}>X</button>
-                                                            )}
-                                                        </div>
-                                                        <small style={{ color: '#6b7280' }}>por: {comment.commenter.username} em {new Date(comment.date).toLocaleString()}</small>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        )}
-                                        {/* --- FORMULÁRIO DE COMENTÁRIO COM ESTILO CORRIGIDO --- */}
-                                        <div style={{ padding: '0px', borderTop: '1px solid #e5e7eb' }}>
-                                            <form
-                                                onSubmit={(e) => handleCommentSubmit(e, post.id)}
-                                                style={{
-                                                    display: 'grid',
-                                                    gridTemplateColumns: '1fr auto', // Input ocupa o espaço, botão se ajusta
-                                                    gap: '10px',
-                                                    alignItems: 'center',
-                                                    padding: '5px',
-                                                    margin: '5px',
-                                                    maxWidth: '1200px'
-                                                }}
-                                            >
-                                                <input
-                                                    type="text"
-                                                    placeholder="Adicione um comentário..."
-                                                    value={commentText[post.id] || ''}
-                                                    onChange={e => setCommentText(prev => ({ ...prev, [post.id]: e.target.value }))}
+                                            <div style={{ padding: '0px', borderTop: '1px solid #e5e7eb' }}>
+                                                <form
+                                                    onSubmit={(e) => handleCommentSubmit(e, post.id)}
                                                     style={{
-                                                        width: '100%',
-                                                        padding: '10px',
-                                                        border: '1px solid #d1d5db',
-                                                        borderRadius: '6px',
-                                                        boxSizing: 'border-box',
-                                                        fontFamily: 'inherit',
-                                                        fontSize: '14px'
-                                                    }}
-                                                />
-                                                <button
-                                                    type="submit"
-                                                    style={{
-                                                        padding: '10px 20px', // Padding vertical igual ao do input
-                                                        backgroundColor: '#3b82f6',
-                                                        color: 'white',
-                                                        border: 'none',
-                                                        borderRadius: '6px',
-                                                        cursor: 'pointer',
-                                                        fontWeight: 'bold',
-                                                        maxWidth: '200px'
+                                                        display: 'grid',
+                                                        gridTemplateColumns: '1fr auto',
+                                                        gap: '10px',
+                                                        alignItems: 'center',
+                                                        padding: '5px',
+                                                        margin: '5px',
+                                                        maxWidth: '1200px'
                                                     }}
                                                 >
-                                                    Comentar
-                                                </button>
-                                            </form>
+                                                    <input
+                                                        type="text"
+                                                        placeholder="Adicione um comentário..."
+                                                        value={commentText[post.id] || ''}
+                                                        onChange={e => setCommentText(prev => ({ ...prev, [post.id]: e.target.value }))}
+                                                        style={{
+                                                            width: '100%', padding: '10px', border: '1px solid #d1d5db',
+                                                            borderRadius: '6px', boxSizing: 'border-box',
+                                                            fontFamily: 'inherit', fontSize: '14px'
+                                                        }}
+                                                    />
+                                                    <button
+                                                        type="submit"
+                                                        style={{
+                                                            padding: '10px 20px', backgroundColor: '#3b82f6',
+                                                            color: 'white', border: 'none', borderRadius: '6px',
+                                                            cursor: 'pointer', fontWeight: 'bold', maxWidth: '200px'
+                                                        }}>
+                                                        Comentar
+                                                    </button>
+                                                </form>
+                                            </div>
                                         </div>
-                                    </div>
-                                ))}
+                                    ))
+                                ) : (
+                                    <p style={{ textAlign: 'center', color: '#6b7280', padding: '20px 0' }}>Nenhum post neste fórum ainda. Seja o primeiro!</p>
+                                )}
                             </div>
                         </div>
                     );
@@ -263,7 +279,7 @@ const MuralPage = () => {
             ) : (
                 <div style={{ textAlign: 'center', padding: '40px', background: 'white', borderRadius: '8px' }}>
                     <h2>Seu feed está vazio!</h2>
-                    <p>Você ainda não participa de nenhum fórum ou não há posts nos fóruns que você segue.</p>
+                    <p>Você ainda não participa de nenhum fórum.</p>
                     <Link to="/">
                         <button>Explorar Fóruns</button>
                     </Link>
