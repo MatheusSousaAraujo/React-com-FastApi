@@ -143,23 +143,3 @@ Agora você tem:
 
 Ambos os serviços estão prontos para interagir entre si via chamadas HTTP (por exemplo, com `axios` no frontend chamando rotas do backend).
 
----
-
-## 📂 Estrutura esperada do projeto
-
-```
-React-com-FastApi/
-├── frontend/              # Projeto React
-│   ├── public/
-│   ├── src/
-│   └── package.json
-│
-├── app/                   # Pasta com os arquivos da API (pode variar)
-│   └── ...
-├── .venv/                 # Ambiente virtual Python (ignorado no Git)
-├── requirements.txt       # Dependências do backend
-├── run.py                 # Arquivo principal para rodar o backend
-└── README.md              # Este arquivo
-```
-
----
