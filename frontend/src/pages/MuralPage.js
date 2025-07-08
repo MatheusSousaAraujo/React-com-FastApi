@@ -4,9 +4,10 @@ import React, { useState, useEffect } from 'react';
 import api from '../api/api';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import editIcon from '../edit.png'; // Certifique-se que este ícone existe na pasta src
+import editIcon from '../edit.png';
 
 const MuralPage = () => {
+    // --- SUA LÓGICA E FUNÇÕES (sem alterações) ---
     const [groupedPosts, setGroupedPosts] = useState({});
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -21,7 +22,6 @@ const MuralPage = () => {
             const posts = response.data;
             const groups = {};
             posts.forEach(post => {
-                // Adiciona uma verificação para garantir que post.group exista
                 if (post.group && post.group.id) {
                     const groupId = post.group.id;
                     if (!groups[groupId]) {
@@ -40,14 +40,12 @@ const MuralPage = () => {
     };
 
     useEffect(() => {
-        // Apenas busca os posts se o usuário estiver logado e carregado
         if (user) {
             fetchAndGroupPosts();
         } else {
-            // Se não houver usuário, para o carregamento para evitar loop
             setLoading(false);
         }
-    }, [user]); // Depende do 'user' para rodar quando o login for concluído
+    }, [user]);
 
     const handleCommentSubmit = async (e, postId) => {
         e.preventDefault();
@@ -98,6 +96,18 @@ const MuralPage = () => {
 
     const groupIds = Object.keys(groupedPosts);
 
+    // --- Estilo base para os botões do cabeçalho do grupo ---
+    const headerButtonStyle = {
+        padding: '8px 16px',
+        borderRadius: '6px',
+        cursor: 'pointer',
+        fontWeight: 'bold',
+        fontSize: '14px',
+        border: '1px solid transparent',
+        minWidth: '110px', // <<< A SOLUÇÃO: Garante uma largura mínima para ambos
+        textAlign: 'center' // Garante que o texto fique centralizado
+    };
+
     return (
         <div style={{ maxWidth: '900px', margin: '0 auto' }}>
             <h1 style={{ color: '#111827' }}>Meu Feed</h1>
@@ -107,19 +117,12 @@ const MuralPage = () => {
                     const group = groupedPosts[groupId];
                     return (
                         <div key={group.id} style={{ 
-                            border: '1px solid #d1d5db', 
-                            borderRadius: '10px', 
-                            marginBottom: '40px', 
-                            background: '#f9fafb',
-                            overflow: 'hidden'
+                            border: '1px solid #d1d5db', borderRadius: '10px', 
+                            marginBottom: '40px', background: '#f9fafb', overflow: 'hidden'
                         }}>
                             <div style={{ 
-                                display: 'flex', 
-                                justifyContent: 'space-between', 
-                                alignItems: 'center', 
-                                padding: '20px', 
-                                borderBottom: '1px solid #e5e7eb', 
-                                background: 'white' 
+                                display: 'flex', justifyContent: 'space-between', alignItems: 'center', 
+                                padding: '20px', borderBottom: '1px solid #e5e7eb', background: 'white' 
                             }}>
                                 <div>
                                     <Link to={`/groups/${group.id}`} style={{textDecoration: 'none'}}>
@@ -133,11 +136,23 @@ const MuralPage = () => {
                                         state={{ preselectedGroup: { id: group.id, name: group.name } }}
                                         style={{ textDecoration: 'none' }}
                                     >
-                                        <button style={{ backgroundColor: '#2563eb', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>
+                                        <button style={{
+                                            ...headerButtonStyle, // Aplica o estilo base
+                                            backgroundColor: '#dbeafe', 
+                                            color: '#1e40af',           
+                                            borderColor: '#bfdbfe',
+                                        }}>
                                             Criar Post
                                         </button>
                                     </Link>
-                                    <button onClick={() => handleLeaveGroup(group.id, group.name)} style={{ backgroundColor: '#fee2e2', color: '#b91c1c', border: '1px solid #fecaca', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>
+                                    <button 
+                                        onClick={() => handleLeaveGroup(group.id, group.name)} 
+                                        style={{
+                                            ...headerButtonStyle, // Aplica o estilo base
+                                            backgroundColor: '#fee2e2', 
+                                            color: '#b91c1c',           
+                                            borderColor: '#fecaca',
+                                        }}>
                                         Sair
                                     </button>
                                 </div>
@@ -146,11 +161,8 @@ const MuralPage = () => {
                             <div style={{ padding: '20px' }}>
                                 {group.posts.map(post => (
                                     <div key={post.id} style={{
-                                        border: '1px solid #e5e7eb',
-                                        borderRadius: '8px',
-                                        marginBottom: '20px',
-                                        background: '#ffffff',
-                                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05)'
+                                        border: '1px solid #e5e7eb', borderRadius: '8px', marginBottom: '20px',
+                                        background: '#ffffff', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05)'
                                     }}>
                                         <div style={{ padding: '20px' }}>
                                             <div>
